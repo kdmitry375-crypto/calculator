@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Терминал ТП 2.5</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            padding: 15px;
+            max-width: 450px;
+            margin: 0 auto;
+            font-size: 14px;
+        }
+        h1 {
+            font-size: 16px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            margin-top: 0;
+        }
+        .checklist {
+            font-size: 12px;
+            color: #ccc;
+            margin-bottom: 15px;
+            line-height: 1.5;
+            background: #1e1e1e;
+            padding: 12px;
+            border-radius: 5px;
+            border-left: 4px solid #ffcc00;
+        }
+        .checklist b {
+            color: #fff;
+            display: block;
+            margin-bottom: 5px;
+        }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .input-group {
+            margin-bottom: 10px;
+        }
+        label {
+            display: block;
+            font-size: 11px;
+            color: #888;
+            margin-bottom: 4px;
+        }
+        input[type="number"], input[type="text"], select {
+            width: 100%;
+            background-color: #1e1e1e;
+            border: 1px solid #333;
+            color: #fff;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #555;
+        }
+        .result-box {
+            background-color: #1e1e1e;
+            border: 1px solid #333;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+        .result-row span:last-child {
+            font-weight: bold;
+            color: #4cd964;
+        }
+        button.calc-btn {
+            width: 100%;
+            padding: 10px;
+            background-color: #333;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button.calc-btn:hover { background-color: #444; }
+        button.send-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+            display: none;
+        }
+        button.send-btn:hover { background-color: #218838; }
+        .url-config {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px dashed #444;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🛡 ТЕРМИНАЛ ТП 2.5</h1>
+
+    <!-- Просто текстовый чек-лист без галочек -->
+    <div class="checklist">
+        <b>📋 Чек-лист перед входом (пробегись глазами):</b>
+        1. Контекст: Тренд H1 согласован с H4/D1 ИЛИ граница диапазона.<br>
+        2. Чистота сетапа: Не притянут, есть вход на M5.<br>
+        3. Время: Прошло ≥ 30 мин после США. Нет CPI / NFP / FOMC.<br>
+        4. Лимиты: Не более 3-х входов, нет 2 убытков подряд.<br>
+        5. Эмоции: Я спокоен, не устал, не отыгрываюсь.
+    </div>
+
+    <div class="grid-2">
+        <div class="input-group">
+            <label>Актив</label>
+            <select id="asset">
+                <option value="ETHUSDT">ETHUSDT</option>
+                <option value="BTCUSDT">BTCUSDT</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <label>Сетап</label>
+            <select id="setup">
+                <option value="BOF">BOF (Ложный пробой)</option>
+                <option value="Откат">Откат по тренду</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="grid-2">
+        <div class="input-group">
+            <label>Депозит ($)</label>
+            <input type="number" id="deposit" value="1000">
+        </div>
+        <div class="input-group">
+            <label>Этап (Риск)</label>
+            <select id="stage">
+                <option value="0.5">Этап 1 (0.5%)</option>
+                <option value="1.0">Этап 2 (1.0%)</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="grid-2">
+        <div class="input-group">
+            <label>Цена Входа</label>
+            <input type="number" step="0.01" id="entry" placeholder="2450.00">
+        </div>
+        <div class="input-group">
+            <label>Стоп по структуре</label>
+            <input type="number" step="0.01" id="low_high" placeholder="2420.00">
+        </div>
+    </div>
+
+    <div class="input-group">
+        <label>ATR M15</label>
+        <input type="number" step="0.01" id="atr" placeholder="15.00">
+    </div>
+
+    <button class="calc-btn" onclick="calculate()">Рассчитать сделку</button>
+
+    <div class="result-box" id="result_box" style="display: none;">
+        <div class="result-row"><span>Стоп-лосс:</span><span id="res_sl">-</span></div>
+        <div class="result-row"><span>Риск ($):</span><span id="res_risk">-</span></div>
+        <div class="result-row"><span>Номинал:</span><span id="res_pos">-</span></div>
+        <div class="result-row"><span>Маржа (5x):</span><span id="res_margin">-</span></div>
+        <div class="result-row"><span>TP1 (2R):</span><span id="res_tp1">-</span></div>
+        <div class="result-row"><span>TP2 (3R):</span><span id="res_tp2">-</span></div>
+    </div>
+
+    <button class="send-btn" id="send_btn" onclick="sendToGoogleSheets()">📊 Внести в Google Таблицу</button>
+
+    <div class="url-config">
+        <label>🔗 Ссылка на Google Script</label>
+        <input type="text" id="google_url" placeholder="https://script.google.com/..." onchange="saveUrl()">
+    </div>
+
+    <script>
+        function saveUrl() {
+            localStorage.setItem('googleScriptUrl', document.getElementById('google_url').value);
+        }
+        
+        window.onload = function() {
+            const savedUrl = localStorage.getItem('googleScriptUrl');
+            if (savedUrl) document.getElementById('google_url').value = savedUrl;
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('entry')) {
+                document.getElementById('entry').value = urlParams.get('entry');
+                document.getElementById('low_high').value = urlParams.get('low_high');
+                document.getElementById('atr').value = urlParams.get('atr');
+                if(urlParams.get('asset')) document.getElementById('asset').value = urlParams.get('asset');
+                calculate();
+            }
+        };
+
+        function calculate() {
+            const entry = parseFloat(document.getElementById('entry').value);
+            const lowHigh = parseFloat(document.getElementById('low_high').value);
+            const atr = parseFloat(document.getElementById('atr').value);
+            const deposit = parseFloat(document.getElementById('deposit').value);
+            const riskPct = parseFloat(document.getElementById('stage').value) / 100;
+
+            if (isNaN(entry) || isNaN(lowHigh) || isNaN(atr) || isNaN(deposit)) {
+                alert("Пожалуйста, заполните все поля (Вход, Стоп, ATR, Депозит).");
+                return;
+            }
+
+            const isLong = entry > lowHigh;
+            let sl = isLong ? lowHigh - (0.15 * atr) : lowHigh + (0.15 * atr);
+            let riskDist = Math.abs(entry - sl);
+
+            if (riskDist < 0.2 * atr) {
+                sl = isLong ? entry - (0.2 * atr) : entry + (0.2 * atr);
+                riskDist = Math.abs(entry - sl);
+            }
+
+            const riskUsd = deposit * riskPct;
+            const positionSize = riskUsd / (riskDist / entry);
+            const margin = positionSize / 5;
+
+            const tp1 = isLong ? entry + (2 * riskDist) : entry - (2 * riskDist);
+            const tp2 = isLong ? entry + (3 * riskDist) : entry - (3 * riskDist);
+
+            document.getElementById('res_sl').innerText = sl.toFixed(2);
+            document.getElementById('res_risk').innerText = riskUsd.toFixed(2) + " $";
+            document.getElementById('res_pos').innerText = positionSize.toFixed(2) + " $";
+            document.getElementById('res_margin').innerText = margin.toFixed(2) + " $";
+            document.getElementById('res_tp1').innerText = tp1.toFixed(2);
+            document.getElementById('res_tp2').innerText = tp2.toFixed(2);
+
+            document.getElementById('result_box').style.display = 'block';
+            document.getElementById('send_btn').style.display = 'block';
+        }
+
+        async function sendToGoogleSheets() {
+            const GOOGLE_SCRIPT_URL = document.getElementById('google_url').value.trim();
+            
+            if (!GOOGLE_SCRIPT_URL || !GOOGLE_SCRIPT_URL.startsWith("https://script.google.com")) {
+                alert("⚠️ Сначала вставьте ссылку на ваш Google Script в поле внизу страницы!");
+                return;
+            }
+
+            // Убрана проверка галочек. Теперь отправляет сразу.
+            const data = {
+                date: new Date().toLocaleString(),
+                asset: document.getElementById('asset').value,
+                setup: document.getElementById('setup').value,
+                entry: document.getElementById('entry').value,
+                sl: document.getElementById('res_sl').innerText,
+                tp1: document.getElementById('res_tp1').innerText,
+                tp2: document.getElementById('res_tp2').innerText,
+                risk_usd: document.getElementById('res_risk').innerText,
+                position: document.getElementById('res_pos').innerText
+            };
+
+            try {
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(data),
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+                });
+                alert("✅ Сделка успешно внесена в Google Таблицу!");
+            } catch (error) {
+                alert("❌ Ошибка! Проверьте ссылку и доступ 'Для всех'.");
+            }
+        }
+    </script>
+</body>
+</html>
